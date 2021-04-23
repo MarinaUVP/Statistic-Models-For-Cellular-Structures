@@ -238,10 +238,30 @@ def join_groups_from_slices(groups_in_slices):
 
     return final_groups
 
+
+def index_on_edge(slice_ind, row_ind, el_ind, no_slices, no_rows, no_elements):
+    """
+    Check if a current voxel is touching an edge of an image.
+    First three parameters are indexes of current voxel.
+    Last three parameters represent size of an image in all three dimensions.
+    :return: True, if current voxel is touching an edge. False otherwise.
+    """
+    if slice_ind == 0 or slice_ind == (no_slices - 1):
+        return True
+    if row_ind == 0 or row_ind == (no_rows - 1):
+        return True
+    if el_ind == 0 or el_ind == (no_elements - 1):
+        return True
+
+    return False
+
 # ==================
 directory = os.getcwd()
 path = directory + R"\Obtained_raw_data\lyso"
 files = os.listdir(path)
+path_on_edge = directory + R"\Lyso_single\On_edge"
+path_in_center = directory + R"\Lyso_single\In_center"
+
 for file in files:
     filename = os.path.join(path, file)
 
@@ -264,8 +284,10 @@ for file in files:
 
     for group in final_groups:
 
+        on_edge = False
+
         # create empty matrix
-        empty_matrix = np.zeros((no_slices, no_rows, no_elements))
+        matrix = np.zeros((no_slices, no_rows, no_elements))
 
         # change 0s to 1s
         for slice_ind in group:
@@ -273,11 +295,22 @@ for file in files:
             for row_index in row:
                 elements = row[row_index]
                 for el_index in elements:
-                    empty_matrix[slice_ind][row_index][el_index] = 1
+                    matrix[slice_ind][row_index][el_index] = 1
+                    check_edge = index_on_edge(slice_ind, row_index, el_index, no_slices, no_rows, no_elements)
+                    if check_edge:
+                        on_edge = True
 
-        name = filename_no_ext + "_" + str(count)
-        ni_img = nib.Nifti1Image(empty_matrix, img.affine)
-        nib.save(ni_img, name)
+        object_name = filename_no_ext + "_" + str(count)
+
+        path_to_save = path_in_center
+        if on_edge:
+            path_to_save = path_on_edge
+
+        path_to_save = path_to_save + "\\" + object_name
+        print(path_to_save)
+
+        ni_img = nib.Nifti1Image(matrix, img.affine)
+        nib.save(ni_img, path_to_save)
         count += 1
 
 
