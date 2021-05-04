@@ -1,7 +1,6 @@
 import math
 import os
 import nibabel as nib
-import intersections
 
 
 def dodecahedron_raw():
@@ -35,11 +34,6 @@ def dodecahedron_raw():
 
     return dodecahedron_coordinates
 
-# directory = os.getcwd()
-# file = directory + R"\Example_lyso\framed.nii"
-# dodecahedron_file = directory + R"\Example_lyso\dodecahedron.obj"
-# intersection_file = directory + R"\Example_lyso\intersections.obj"
-
 
 def image_data(filename):
     """
@@ -64,9 +58,6 @@ def image_data(filename):
 def scale(coordinates_array, factor):
     """
     Scales dodecahedron. Computes new (scaled) coordinates.
-    :param coordinates_array:
-    :param factor:
-    :return:
     """
 
     scaled_coords = []
@@ -92,56 +83,49 @@ def translate(coordinates_array, center):
     return translated_coords
 
 
-def find_image_edge_coords(coordinates_array, center, box_lengths):
-    """
-    Computes where ray from outer coordinate (dodecahedron coordinate) toward image center hits box around an object.
-    """
+# def find_image_edge_coords(coordinates_array, center, box_lengths):
+#     """
+#     Computes where ray from outer coordinate (dodecahedron coordinate) toward image center hits box around an object.
+#     """
+#
+#     edge_intersections = []
+#     for coord in coordinates_array:
+#         inter = intersections.edge_intersection(coord, center, 0, box_lengths[0], 0, box_lengths[1], 0, box_lengths[2])
+#         edge_intersections.append(inter)
+#     return edge_intersections
+#
+#
+# def find_object_intersections(coords_on_edge, center, img_data):
+#     """
+#     Computes where ray from coordinate on edge (coordinate on box around object) toward image center hits an object.
+#     """
+#
+#     voxel_intersections = []
+#     for edge_inter in coords_on_edge:
+#         voxel_inter = intersections.voxel_intersection(edge_inter, center, img_data)
+#         voxel_intersections.append(voxel_inter)
+#
+#     return voxel_intersections
 
-    edge_intersections = []
-    for coord in coordinates_array:
-        inter = intersections.edge_intersection(coord, center, 0, box_lengths[0], 0, box_lengths[1], 0, box_lengths[2])
-        edge_intersections.append(inter)
-    return edge_intersections
 
-
-def find_object_intersections(coords_on_edge, center, img_data):
-    """
-    Computes where ray from coordinate on edge (coordinate on box around object) toward image center hits an object.
-    """
-
-    voxel_intersections = []
-    for edge_inter in coords_on_edge:
-        voxel_inter = intersections.voxel_intersection(edge_inter, center, img_data)
-        voxel_intersections.append(voxel_inter)
-
-    return voxel_intersections
-
-
-# with open(intersection_file, "w") as f:
-#     for el in voxel_intersections:
-#         v1 = el[0]
-#         v2 = el[1]
-#         v3 = el[2]
-#         f.write(f"v {v1} {v2} {v3}\n")
-
-def intersection_coordinates(path_to_voxel_file):
-    """
-    Computes all intersections where rays from dodecahedron coordinates toward object center hit an object.
-    """
-
-    dodecahedron = dodecahedron_raw()
-    s_factor, img_center, img_data = image_data(path_to_voxel_file)
-    box_len = [img_center[0] * 2, img_center[1] * 2, img_center[2] * 2]
-    scaled_coords = scale(dodecahedron, s_factor)
-    translated_coords = translate(scaled_coords, img_center)
-    image_edge_intersections = find_image_edge_coords(translated_coords, img_center, box_len)
-    object_intersections = find_object_intersections(image_edge_intersections, img_center, img_data)
-
-    # translate coordinates back to center of coordinate system
-    # img_center_inverse = [el * (-1) for el in img_center]
-    # intersections_translated = translated_coords(object_intersections, img_center_inverse)
-
-    return object_intersections, img_center
+# def intersection_coordinates(path_to_voxel_file):
+#     """
+#     Computes all intersections where rays from dodecahedron coordinates toward object center hit an object.
+#     """
+#
+#     dodecahedron = dodecahedron_raw()
+#     s_factor, img_center, img_data = image_data(path_to_voxel_file)
+#     box_len = [img_center[0] * 2, img_center[1] * 2, img_center[2] * 2]
+#     scaled_coords = scale(dodecahedron, s_factor)
+#     translated_coords = translate(scaled_coords, img_center)
+#     image_edge_intersections = find_image_edge_coords(translated_coords, img_center, box_len)
+#     object_intersections = find_object_intersections(image_edge_intersections, img_center, img_data)
+#
+#     # translate coordinates back to center of coordinate system
+#     # img_center_inverse = [el * (-1) for el in img_center]
+#     # intersections_translated = translated_coords(object_intersections, img_center_inverse)
+#
+#     return object_intersections, img_center
 
 
 def back_to_center(coordinates, center):

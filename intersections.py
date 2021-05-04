@@ -4,6 +4,7 @@ import math
 from sympy import *
 import os
 import nibabel as nib
+import dodecahedron
 
 
 def perpendicular_point(point, center, x_min, x_max, y_min, y_max, z_min, z_max):
@@ -198,7 +199,6 @@ def check_grid_status(i_point, voxel_data, steps):
     voxel_steps = whole_coord_arr * steps
 
     current_voxel = floor_vector(i_point.copy())
-    print(current_voxel)
     n_voxel = current_voxel + voxel_steps
 
     current_voxel_status = voxel_data[int(current_voxel[0])][int(current_voxel[1])][int(current_voxel[2])]
@@ -283,27 +283,275 @@ def voxel_intersection(edge_point, center, voxel_data):
         if is_inter == "In":
             distance_coords[shortest_c["length"]] = new_inter
 
-        min_length, shortest_c = find_min_len_and_coord(candidates) # !!!! -> ali moram posodobiti seznam kandidatov?
+        min_length, shortest_c = find_min_len_and_coord(candidates)
 
     # check if intersection can be found within grid intersections where previous and new voxel statuses are 1
     # find that kind of grid intersection with minimal distance from original point to center
     min_grid_inter = find_inter_with_min_length(distance_coords)
     return min_grid_inter
 
-
 # =================
-#
-# directory = os.getcwd()
-# file = directory + R"\right_framed.nii"
-#
-# img = nib.load(file)
-# img_data = img.get_fdata()
+# =================
 
-# print(voxel_intersection([23.5, -23.5, 22], [12.5, -12.5, 11], 0))
-# print(voxel_intersection([12.5, -16.702, 22], [12.5, -12.5, 11], img_data))
 
-# print(voxel_intersection([12.5, 22, 16.702], [12.5, 11, 12.5], img_data)) # slicer ?
-# print(voxel_intersection([7.7254, 11, 0.000002], [12.5, 11, 12.5], img_data))
-# print(voxel_intersection([7.7254, 11, 0], [12.5, 11, 12.5], img_data))
+def is_intersection(voxel_image, prev_coords, current_coords):
 
-# print(voxel_intersection([1.5, 22, 1.5], [12.5, 11, 12.5], img_data))
+    px = prev_coords[0]
+    py = prev_coords[1]
+    pz = prev_coords[2]
+
+    cx = current_coords[0]
+    cy = current_coords[1]
+    cz = current_coords[2]
+
+    prev_voxel_status = voxel_image[px][py][pz]
+    current_voxel_status = voxel_image[cx][cy][cz]
+
+    if prev_voxel_status == 1 and current_voxel_status == 0:
+        return True
+    return False
+
+
+def compute_steps(origin, point):
+    """
+    Computes steps. Step for each coordinate can be 1 or -1.
+    (Checks if coordinate is increasing or decreasing from origin towards point.)
+    """
+
+    stepX = -1
+    stepY = -1
+    stepZ = -1
+
+    if origin[0] < point[0]:
+        stepX = 1
+    if origin[1] < point[1]:
+        stepY = 1
+    if origin[2] < point[2]:
+        stepZ = 1
+
+    return stepX, stepY, stepZ
+
+
+def first_grids_inter(origin, steps):
+    """
+    Check where will a ray from an origin first hit a grid.
+    This can be computed with given origin and steps in all directions.
+    """
+
+    gx, gy, gz = np.array(origin) + np.array(steps)
+
+    if (origin[0] % 1) != 0:
+        gx = math.floor(origin[0])
+        if steps[0] == 1:
+            gx = math.ceil(origin[0])
+
+    if (origin[1] % 1) != 0:
+        gy = math.floor(origin[1])
+        if steps[1] == 1:
+            gy = math.ceil(origin[1])
+
+    if (origin[2] % 1) != 0:
+        gz = math.floor(origin[2])
+        if steps[2] == 1:
+            gz = math.ceil(origin[2])
+
+    return gx, gy, gz
+
+
+def compute_tMaxs(origin, point, first_grids):
+    """
+    Computes tMaxX, tMaxY and tMaxZ parameters for voxel_traversal algorithm.
+    """
+
+    direction_vector = np.array(point) - np.array(origin)
+    tMaxX = math.inf
+    tMaxY = math.inf
+    tMaxZ = math.inf
+
+    if direction_vector[0] != 0:
+        tMaxX = (first_grids[0] - origin[0]) / direction_vector[0]
+
+    if direction_vector[1] != 0:
+        tMaxY = (first_grids[1] - origin[1]) / direction_vector[1]
+
+    if direction_vector[2] != 0:
+        tMaxZ = (first_grids[2] - origin[2]) / direction_vector[2]
+
+    return tMaxX, tMaxY, tMaxZ
+
+
+def compute_tDeltas(origin, point, steps):
+    """
+    Computes tDeltaX, tDeltaY and tDeltaZ parameters for voxel_traversal algorithm.
+    """
+    direction_vector = np.array(point) - np.array(origin)
+
+    tDeltaX = 0
+    tDeltaY = 0
+    tDeltaZ = 0
+
+    if direction_vector[0] != 0:
+        tDeltaX = steps[0] / direction_vector[0]
+
+    if direction_vector[1] != 0:
+        tDeltaY = steps[1] / direction_vector[1]
+
+    if direction_vector[2] != 0:
+        tDeltaZ = steps[2] / direction_vector[2]
+
+    return tDeltaX, tDeltaY, tDeltaZ
+
+
+def define_edge_coords(img_size, steps):
+
+    edge_coords = []
+
+    for i in range(len(steps)):
+        if steps[i] == 1:
+            edge_coords.append(img_size[i])
+        else:
+            edge_coords.append(0)
+
+    return edge_coords
+
+
+def voxel_traversal(voxel_image, origin, edge_coords, stepX, stepY, stepZ, tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY, tDeltaZ):
+    """
+    http://www.cse.yorku.ca/~amana/research/grid.pdf
+    """
+
+    x = origin[0]
+    y = origin[1]
+    z = origin[2]
+
+    intersection = False
+    grid_intersections = [origin]
+    prev_coords = [math.floor(el) for el in origin]
+
+    while intersection == False:
+        if tMaxX < tMaxY:
+            if tMaxX < tMaxZ:
+                x += stepX
+                grid_intersections.append([x, y, z])
+
+                current_coords = [math.floor(el) for el in grid_intersections[-1]]
+                intersection = is_intersection(voxel_image, prev_coords, current_coords)
+
+                # check if index is out of grid
+                if math.floor(x) == edge_coords[0] and not intersection:
+                    return None
+
+                tMaxX += tDeltaX
+            else:
+                z += stepZ
+                grid_intersections.append([x, y, z])
+
+                current_coords = [math.floor(el) for el in grid_intersections[-1]]
+                intersection = is_intersection(voxel_image, prev_coords, current_coords)
+
+                # check if index is out of grid
+                if math.floor(z) == edge_coords[2] and not intersection:
+                    return None
+
+                tMaxZ += tDeltaZ
+        else:
+            if tMaxY < tMaxZ:
+                y += stepY
+                grid_intersections.append([x, y, z])
+
+                current_coords = [math.floor(el) for el in grid_intersections[-1]]
+                intersection = is_intersection(voxel_image, prev_coords, current_coords)
+
+                # check if index is out of grid
+                if math.floor(y) == edge_coords[1] and not intersection:
+                    return None
+
+                tMaxY += tDeltaY
+            else:
+                z += stepZ
+                grid_intersections.append([x, y, z])
+
+                current_coords = [math.floor(el) for el in grid_intersections[-1]]
+                intersection = is_intersection(voxel_image, prev_coords, current_coords)
+
+                # check if index is out of grid
+                if math.floor(z) == edge_coords[2] and not intersection:
+                    return None
+
+                tMaxZ += tDeltaZ
+
+    return grid_intersections[-2:]
+
+
+def grid_index(voxel_in, voxel_out):
+    """
+    Computes on which "grid line" intersection happens.
+    """
+
+    non_zero_line = np.array(voxel_in) - np.array(voxel_out)
+    non_zero_index = 0
+    if non_zero_line[1] != 0:
+        non_zero_index = 1
+    elif non_zero_line[2] != 0:
+        non_zero_index = 2
+
+    grid_value = math.floor(voxel_out[non_zero_index])
+    if voxel_in[non_zero_index] > voxel_out[non_zero_index]:
+        grid_value = math.ceil(voxel_out[non_zero_index])
+
+    return non_zero_index, grid_value
+
+
+def ray_voxel_intersection(center, point, traversal_res):
+    """
+    Compute where ray from center towards point intersects voxel object.
+    traversal_res are arrays between which intersection happens.
+    """
+
+    voxel_in = traversal_res[0]
+    voxel_out = traversal_res[1]
+
+    direction_vector = np.array(point) - np.array(center)
+
+    ind, grid_value = grid_index(voxel_in, voxel_out)
+
+    t = find_t(center[ind], direction_vector[ind], grid_value)
+    int_point = point_by_t(center, direction_vector, t)
+
+    return int_point
+
+
+def all_intersections_object(file):
+    """
+    Computes all intersections where rays from points around an object toward object's center hit an object.
+    """
+
+    img = nib.load(file)
+    img_shape = img.shape
+    factor, center, img_data = dodecahedron.image_data(file)
+    raw_points = dodecahedron.dodecahedron_raw()
+    scaled_points = dodecahedron.scale(raw_points, factor)
+    translated_points = dodecahedron.translate(scaled_points, center)
+
+    inter_points = []
+    for point in translated_points:
+
+        stepX, stepY, stepZ = compute_steps(center, point)
+        steps = [stepX, stepY, stepZ]
+
+        edge_coords = define_edge_coords(img_shape, steps)
+
+        first_grids = first_grids_inter(center, steps)
+
+        tMaxX, tMaxY, tMaxZ = compute_tMaxs(center, point, first_grids)
+
+        tDeltaX, tDeltaY, tDeltaZ = compute_tDeltas(center, point, steps)
+
+        res = voxel_traversal(img_data, center, edge_coords, stepX, stepY, stepZ, tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY,
+                              tDeltaZ)
+
+        if res != None:
+            int_point = ray_voxel_intersection(center, point, res)
+            inter_points.append(int_point)
+
+    return inter_points, center
