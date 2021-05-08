@@ -31,8 +31,6 @@ Because point can be anywhere in a space (3D points) and our objects are represe
 Now we can compute intersections of rays with object. This is done in file **all_intersections.py**, using also **deodecahedron.py** and **intersections.py** files.
 Results (all computed intersections) are saved in file **all_intersections.obj**.
 
-Note: few objects are skipped in computation of intersection, because code is not yet working properly.
-
 ### Additional files
 
 In folder **Example_lyso** are few files for one lysosome to visualize few steps of a process described above.
