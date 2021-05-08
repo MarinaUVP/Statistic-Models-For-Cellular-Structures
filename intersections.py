@@ -533,6 +533,13 @@ def all_intersections_object(file):
     scaled_points = dodecahedron.scale(raw_points, factor)
     translated_points = dodecahedron.translate(scaled_points, center)
 
+    # check if center point is out of object
+    cx = math.floor(center[0])
+    cy = math.floor(center[1])
+    cz = math.floor(center[2])
+    if img_data[cx][cy][cz] == 0:
+        return "center out"
+
     inter_points = []
     for point in translated_points:
 
@@ -554,4 +561,4 @@ def all_intersections_object(file):
             int_point = ray_voxel_intersection(center, point, res)
             inter_points.append(int_point)
 
-    return inter_points, center
+    return (inter_points, center)

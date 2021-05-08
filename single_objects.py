@@ -192,6 +192,7 @@ def join_groups_from_slices(groups_in_slices):
                 open_groups = []
         else:
             for current_group in slice:
+
                 candidates = []
                 # two groups from two consecutive slices will be joined in one if there is at least one element
                 # with the same row index and the same index inside the row (element index)
@@ -200,14 +201,29 @@ def join_groups_from_slices(groups_in_slices):
                         row_indexes_current = current_group.keys()
                         row_indexes_candidate = open_group[count-1].keys()
                         for index in row_indexes_current:
-                            if index in row_indexes_candidate:  # row match
+                            if open_group in candidates:
+                                break
+                            elif index in row_indexes_candidate:  # row match
                                 element_indexes_current = current_group[index]
                                 element_indexes_candidate = open_group[count-1][index]
                                 for el in element_indexes_current:
                                     if el in element_indexes_candidate:  # element match
                                         candidates.append(open_group)
                                         break
+
+                    if count in open_group.keys():  # slice match (group in current slice)
+                        row_indexes_current = current_group.keys()
+                        row_indexes_candidate = open_group[count].keys()
+                        for index in row_indexes_current:
+                            if open_group in candidates:
                                 break
+                            elif index in row_indexes_candidate:  # row match
+                                element_indexes_current = current_group[index]
+                                element_indexes_candidate = open_group[count][index]
+                                for el in element_indexes_current:
+                                    if el in element_indexes_candidate:  # element match
+                                        candidates.append(open_group)
+                                        break
 
                 # check number of candidates (number of groups with the same keys)
                 # remove candidates from open_groups to open_groups_in_current_slice
@@ -313,7 +329,34 @@ for file in files:
         nib.save(ni_img, path_to_save)
         count += 1
 
+# experiment below =====================
 
-# Save NRRD
-# nrrd_path_to = "image.nrrd"
-# nrrd.write(image_path_to, array)
+# path = directory + R"\Obtained_raw_data\lyso\fib1-3-2-1.nii.gz"
+# # files = os.listdir(path)
+# path_on_edge = directory + R"\On_edge_example"
+# path_in_center = directory + R"\In_center_example"
+#
+# filename = path
+#
+# # Image data
+# img = nib.load(filename)
+# img_data = img.get_fdata()
+# header = img.header
+# data_shape = header.get_data_shape()
+# no_slices = data_shape[0]
+# no_rows = data_shape[1]
+# no_elements = data_shape[2]
+#
+# neighbours_in_slices = find_neighbours_in_slices(img_data)
+# final_groups = join_groups_from_slices(neighbours_in_slices)
+#
+#
+# example_file = "example_final_try.txt"
+# with open(example_file, "w") as f:
+#     for group in final_groups:
+#         f.write("========== \n")
+#         for key, value in group.items():
+#             f.write(f"{key}\n")
+#             f.write(f"{value}\n")
+#             f.write("\n")
+
