@@ -1,6 +1,7 @@
 import math
 import os
 import nibabel as nib
+from scipy import ndimage
 
 
 def dodecahedron_raw():
@@ -35,24 +36,42 @@ def dodecahedron_raw():
     return dodecahedron_coordinates
 
 
+def scaling_factor(img_size, object_cog):
+    """
+    Copmutes scaling factor for dodecahedron.
+    """
+
+    size_x, size_y, size_z = img_size
+    cog_x, cog_y, cog_z = object_cog
+
+    max_dist_x = max(abs(size_x - cog_x), cog_x)
+    max_dist_y = max(abs(size_y - cog_y), cog_y)
+    max_dist_z = max(abs(size_z - cog_z), cog_z)
+
+    dc = math.sqrt(max_dist_x ** 2 + max_dist_y ** 2 + max_dist_z ** 2)
+    factor = math.ceil(dc / math.sqrt(3))
+
+    return factor
+
+
 def image_data(filename):
     """
     Reads information about voxel image and returns image data and another paramaters.
     Returns:
-        - factor: scale factor (dodecahedron should be bigger than voxel object)
-        - center: center of voxel image
+        - factor: scaling factor (dodecahedron should be bigger than voxel object)
+        - cog: center of gravity
         - img_data: data info about voxel image
     """
 
     img = nib.load(filename)
     img_data = img.get_fdata()
 
-    size_x, size_y, size_z = img.header.get_data_shape()
-    center = [size_x/2, size_y/2, size_z/2]
-    dc = math.sqrt(center[0]**2 + center[1]**2 + center[1]**2)
-    factor = math.ceil(dc / math.sqrt(3))
+    img_size = img.header.get_data_shape()
+    cog = ndimage.measurements.center_of_mass(img_data)
 
-    return factor, center, img_data
+    factor = scaling_factor(img_size, cog)
+
+    return factor, cog, img_data
 
 
 def scale(coordinates_array, factor):
@@ -67,65 +86,21 @@ def scale(coordinates_array, factor):
     return scaled_coords
 
 
-def translate(coordinates_array, center):
+def translate(coordinates_array, cog):
     """
     Translates dodecahedron.
+    cog - object's center of gravity
     """
 
     translated_coords = []
     for el in coordinates_array:
         trans_el = el
-        trans_el[0] += center[0]
-        trans_el[1] += center[1]
-        trans_el[2] += center[2]
+        trans_el[0] += cog[0]
+        trans_el[1] += cog[1]
+        trans_el[2] += cog[2]
         translated_coords.append(trans_el)
 
     return translated_coords
-
-
-# def find_image_edge_coords(coordinates_array, center, box_lengths):
-#     """
-#     Computes where ray from outer coordinate (dodecahedron coordinate) toward image center hits box around an object.
-#     """
-#
-#     edge_intersections = []
-#     for coord in coordinates_array:
-#         inter = intersections.edge_intersection(coord, center, 0, box_lengths[0], 0, box_lengths[1], 0, box_lengths[2])
-#         edge_intersections.append(inter)
-#     return edge_intersections
-#
-#
-# def find_object_intersections(coords_on_edge, center, img_data):
-#     """
-#     Computes where ray from coordinate on edge (coordinate on box around object) toward image center hits an object.
-#     """
-#
-#     voxel_intersections = []
-#     for edge_inter in coords_on_edge:
-#         voxel_inter = intersections.voxel_intersection(edge_inter, center, img_data)
-#         voxel_intersections.append(voxel_inter)
-#
-#     return voxel_intersections
-
-
-# def intersection_coordinates(path_to_voxel_file):
-#     """
-#     Computes all intersections where rays from dodecahedron coordinates toward object center hit an object.
-#     """
-#
-#     dodecahedron = dodecahedron_raw()
-#     s_factor, img_center, img_data = image_data(path_to_voxel_file)
-#     box_len = [img_center[0] * 2, img_center[1] * 2, img_center[2] * 2]
-#     scaled_coords = scale(dodecahedron, s_factor)
-#     translated_coords = translate(scaled_coords, img_center)
-#     image_edge_intersections = find_image_edge_coords(translated_coords, img_center, box_len)
-#     object_intersections = find_object_intersections(image_edge_intersections, img_center, img_data)
-#
-#     # translate coordinates back to center of coordinate system
-#     # img_center_inverse = [el * (-1) for el in img_center]
-#     # intersections_translated = translated_coords(object_intersections, img_center_inverse)
-#
-#     return object_intersections, img_center
 
 
 def back_to_center(coordinates, center):

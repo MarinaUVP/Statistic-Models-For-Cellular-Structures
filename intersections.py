@@ -528,37 +528,31 @@ def all_intersections_object(file):
 
     img = nib.load(file)
     img_shape = img.shape
-    factor, center, img_data = dodecahedron.image_data(file)
+    factor, cog, img_data = dodecahedron.image_data(file)
     raw_points = dodecahedron.dodecahedron_raw()
     scaled_points = dodecahedron.scale(raw_points, factor)
-    translated_points = dodecahedron.translate(scaled_points, center)
-
-    # check if center point is out of object
-    cx = math.floor(center[0])
-    cy = math.floor(center[1])
-    cz = math.floor(center[2])
-    if img_data[cx][cy][cz] == 0:
-        return "center out"
+    translated_points = dodecahedron.translate(scaled_points, cog)
 
     inter_points = []
     for point in translated_points:
 
-        stepX, stepY, stepZ = compute_steps(center, point)
+        stepX, stepY, stepZ = compute_steps(cog, point)
         steps = [stepX, stepY, stepZ]
 
         edge_coords = define_edge_coords(img_shape, steps)
 
-        first_grids = first_grids_inter(center, steps)
+        first_grids = first_grids_inter(cog, steps)
 
-        tMaxX, tMaxY, tMaxZ = compute_tMaxs(center, point, first_grids)
+        tMaxX, tMaxY, tMaxZ = compute_tMaxs(cog, point, first_grids)
 
-        tDeltaX, tDeltaY, tDeltaZ = compute_tDeltas(center, point, steps)
+        tDeltaX, tDeltaY, tDeltaZ = compute_tDeltas(cog, point, steps)
 
-        res = voxel_traversal(img_data, center, edge_coords, stepX, stepY, stepZ, tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY,
+        res = voxel_traversal(img_data, cog, edge_coords, stepX, stepY, stepZ, tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY,
                               tDeltaZ)
 
         if res != None:
-            int_point = ray_voxel_intersection(center, point, res)
+            int_point = ray_voxel_intersection(cog, point, res)
             inter_points.append(int_point)
 
-    return (inter_points, center)
+    return (inter_points, cog)
+

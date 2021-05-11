@@ -2,22 +2,17 @@ import dodecahedron
 import os
 import intersections
 
-def generate_intersection_files(path_to_objects, obj_data_path, txt_data_path):
+def generate_intersections_file(path_to_objects, obj_data_path, txt_data_path):
     intersections_all_objects_center = []
-    out_center_objects = []
     for path, dirs, files in os.walk(path_to_objects):
         for file in files:
             path_to_file = os.path.join(path_to_objects, file)
 
             inter_res = intersections.all_intersections_object(path_to_file)
 
-            if inter_res != "center out":
-                inter_points, img_center = inter_res
-                intersections_to_center = dodecahedron.back_to_center(inter_points, img_center)
-                intersections_all_objects_center.append(intersections_to_center)
-
-            else:
-                    out_center_objects.append(file)
+            inter_points, cog = inter_res
+            intersections_to_center = dodecahedron.back_to_center(inter_points, cog)
+            intersections_all_objects_center.append(intersections_to_center)
 
     with open(obj_data_path, "w") as f:
         for object_intersections in intersections_all_objects_center:
@@ -29,17 +24,17 @@ def generate_intersection_files(path_to_objects, obj_data_path, txt_data_path):
 
     with open(txt_data_path, "w") as f:
         for object_intersections in intersections_all_objects_center:
-                f.write(f"{object_intersections}\n")
-
-    return out_center_objects
+            intersection_list = []
+            for inter in object_intersections:
+                intersection_list.append(inter.tolist())
+            f.write(f"{intersection_list}\n")
 
 
 # =======================
 
 directory = os.getcwd()
 path_to_objects = directory + R"\Lyso_single\In_center\Framed"
-path_obj_file = directory + R"\Lyso_single\Intersections\all_intersections_lyso.obj"
-path_txt_file = directory + R"\Lyso_single\Intersections\all_intersections_lyso.txt"
+path_obj_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_lyso.obj"
+path_txt_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_lyso.txt"
 
-img_out = generate_intersection_files(path_to_objects, path_obj_file, path_txt_file)
-print(img_out)
+generate_intersections_file(path_to_objects, path_obj_file, path_txt_file)
