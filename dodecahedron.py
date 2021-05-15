@@ -54,24 +54,24 @@ def scaling_factor(img_size, object_cog):
     return factor
 
 
-def image_data(filename):
-    """
-    Reads information about voxel image and returns image data and another paramaters.
-    Returns:
-        - factor: scaling factor (dodecahedron should be bigger than voxel object)
-        - cog: center of gravity
-        - img_data: data info about voxel image
-    """
-
-    img = nib.load(filename)
-    img_data = img.get_fdata()
-
-    img_size = img.header.get_data_shape()
-    cog = ndimage.measurements.center_of_mass(img_data)
-
-    factor = scaling_factor(img_size, cog)
-
-    return factor, cog, img_data
+# def image_data(filename):
+#     """
+#     Reads information about voxel image and returns image data and another paramaters.
+#     Returns:
+#         - factor: scaling factor (dodecahedron should be bigger than voxel object)
+#         - cog: center of gravity
+#         - img_data: data info about voxel image
+#     """
+#
+#     img = nib.load(filename)
+#     img_data = img.get_fdata()
+#
+#     img_size = img.header.get_data_shape()
+#     cog = ndimage.measurements.center_of_mass(img_data)
+#
+#     factor = scaling_factor(img_size, cog)
+#
+#     return factor, cog, img_data
 
 
 def scale(coordinates_array, factor):

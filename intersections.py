@@ -5,6 +5,8 @@ from sympy import *
 import os
 import nibabel as nib
 import dodecahedron
+import icosahedron
+from scipy import ndimage
 
 
 def perpendicular_point(point, center, x_min, x_max, y_min, y_max, z_min, z_max):
@@ -521,6 +523,26 @@ def ray_voxel_intersection(center, point, traversal_res):
     return int_point
 
 
+def image_data(filename):
+    """
+    Reads information about voxel image and returns image data and another paramaters.
+    Returns:
+        - factor: scaling factor (dodecahedron should be bigger than voxel object)
+        - cog: center of gravity
+        - img_data: data info about voxel image
+    """
+
+    img = nib.load(filename)
+    img_data = img.get_fdata()
+
+    # img_size = img.header.get_data_shape()
+    cog = ndimage.measurements.center_of_mass(img_data)
+
+    # factor = scaling_factor(img_size, cog)
+
+    return cog, img_data
+
+
 def all_intersections_object(file):
     """
     Computes all intersections where rays from points around an object toward object's center hit an object.
@@ -528,13 +550,16 @@ def all_intersections_object(file):
 
     img = nib.load(file)
     img_shape = img.shape
-    factor, cog, img_data = dodecahedron.image_data(file)
-    raw_points = dodecahedron.dodecahedron_raw()
-    scaled_points = dodecahedron.scale(raw_points, factor)
-    translated_points = dodecahedron.translate(scaled_points, cog)
+    cog, img_data = image_data(file)
+
+    # raw_points = dodecahedron.dodecahedron_raw()
+    # scaled_points = dodecahedron.scale(raw_points, factor)
+    # translated_points = dodecahedron.translate(scaled_points, cog)
+
+    ref_points = icosahedron.reference_points(img_shape, cog)
 
     inter_points = []
-    for point in translated_points:
+    for point in ref_points:
 
         stepX, stepY, stepZ = compute_steps(cog, point)
         steps = [stepX, stepY, stepZ]
@@ -555,4 +580,21 @@ def all_intersections_object(file):
             inter_points.append(int_point)
 
     return (inter_points, cog)
+
+
+def to_center(inter_points, cog):
+    """
+    Translates cooridnates back to center of coordiante system.
+    """
+
+    cx, cy, cz = cog
+
+    intersections_center = []
+    for point in inter_points:
+        px, py, pz = point
+        intersections_center.append([px-cx, py-cy, pz-cz])
+
+    return intersections_center
+
+
 
