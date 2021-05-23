@@ -543,7 +543,7 @@ def image_data(filename):
     return cog, img_data
 
 
-def all_intersections_object(file):
+def all_intersections_object(file, ico_subdiv_factor):
     """
     Computes all intersections where rays from points around an object toward object's center hit an object.
     """
@@ -556,7 +556,7 @@ def all_intersections_object(file):
     # scaled_points = dodecahedron.scale(raw_points, factor)
     # translated_points = dodecahedron.translate(scaled_points, cog)
 
-    ref_points = icosahedron.reference_points(img_shape, cog)
+    ref_points = icosahedron.reference_points(img_shape, cog, ico_subdiv_factor)
 
     inter_points = []
     for point in ref_points:
