@@ -6,15 +6,15 @@ from perlin_noise import PerlinNoise
 import icosahedron
 
 
-def generate_noise(ref_dict):
+def generate_noise(no_ref_points, no_octaves=10):
     """
     Generates Perlin noise based on number of reference points.
-    Noise represented as an array of values, same length as no. of reference poibts.
+    Noise represented as an array of values, same length as no. of reference points.
     """
 
-    no_ref = len(ref_dict.keys())
-    noise = PerlinNoise(octaves=10, seed=no_ref)
-    noise_array = [noise([j/no_ref]) for j in range(no_ref)]
+    noise = PerlinNoise(octaves=no_octaves, seed=no_ref_points)
+    noise_array = [noise([j/no_ref_points]) for j in range(no_ref_points)]
+    # edited_array = [el*10 for el in noise_array]
 
     return noise_array
 
@@ -157,7 +157,7 @@ def generate_lyso(data_file, param=0):
     # Icosahedron -----
     ico_vertices = icosahedron.icosahedron_vertices()
     ico_faces = icosahedron.icosahedron_faces()
-    sub_ico_vertices, sub_ico_faces = icosahedron.subdivided_icosahedron(ico_vertices, ico_faces, 2)
+    sub_ico_vertices, sub_ico_faces = icosahedron.subdivided_icosahedron(ico_vertices, ico_faces, 3)
 
     # Obtained data -----
     all_intersection = read_intersections_file(data_file)
@@ -182,6 +182,45 @@ def generate_lyso(data_file, param=0):
     return new_vertices, sub_ico_faces
 
 
+def generate_lyso_with_noise(data_file, param=0):
+    """
+    Generates new lysosome.
+    :param param: Value between -1 and 1.
+    :return: Data for mesh object. List of vertices and list of faces.
+    """
+
+    # Icosahedron -----
+    ico_vertices = icosahedron.icosahedron_vertices()
+    ico_faces = icosahedron.icosahedron_faces()
+    sub_ico_vertices, sub_ico_faces = icosahedron.subdivided_icosahedron(ico_vertices, ico_faces, 3)
+
+    # Obtained data -----
+    all_intersection = read_intersections_file(data_file)
+    u_dict = unite_by_ref_index(all_intersection)
+    avg_vectors = avg_vect_by_ref(u_dict)
+    mins_maxs_list = min_max_all_ref_points(u_dict)
+    min_max_directs = min_max_directions(avg_vectors, mins_maxs_list)
+
+    # Noise -----
+    no_ref_points = len(avg_vectors)
+    noise = generate_noise(no_ref_points)
+
+    new_vertices = []
+    if param == 0:
+        new_vertices = avg_vectors
+    else:
+        if param > 0:
+            for ind in range(len(avg_vectors)):
+                point = avg_vectors[ind] + param * min_max_directs[ind][1] + noise[ind]
+                new_vertices.append(point)
+        elif param < 0:
+            for ind in range(len(avg_vectors)):
+                point = avg_vectors[ind] + abs(param) * min_max_directs[ind][0] + noise[ind]
+                new_vertices.append(point)
+
+    return new_vertices, sub_ico_faces
+
+
 def write_obj_file(filepath, vertices, faces):
     """
     Writes .obj file from data obtained with generate_lyso function.
@@ -196,60 +235,33 @@ def write_obj_file(filepath, vertices, faces):
 
 
 # ===== Icosahedron ========
-ico_vertices = icosahedron.icosahedron_vertices()
-ico_faces = icosahedron.icosahedron_faces()
-sub_ico_vertices, sub_ico_faces = icosahedron.subdivided_icosahedron(ico_vertices, ico_faces, 2)
+# ico_vertices = icosahedron.icosahedron_vertices()
+# ico_faces = icosahedron.icosahedron_faces()
+# sub_ico_vertices, sub_ico_faces = icosahedron.subdivided_icosahedron(ico_vertices, ico_faces, 3)
 
 # print(sub_ico_faces)
 
 # ===========
 
 directory = os.getcwd()
-path_data_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_iso_lyso.txt"
-filename = "new_lyso_083.obj"
+path_data_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_iso_lyso_3.txt"
+path_new_objects = directory + R"\Lyso_single\New_objects\sub_3"
+filename = "new_lyso_0.obj"
 
-vertices, faces = generate_lyso(path_data_file, 0.83)
-write_obj_file(filename, vertices, faces)
+path_new_obj = os.path.join(path_new_objects, filename)
+
+vertices, faces = generate_lyso(path_data_file, 0)
+write_obj_file(path_new_obj, vertices, faces)
 
 
+# === Noise
 
-# u_dict = unite_by_ref_index(all_intersection)
-# avg_vectors = avg_vect_by_ref(u_dict)
-# mins_maxs_list = min_max_all_ref_points(u_dict)
-# min_max_directs = min_max_directions(avg_vectors, mins_maxs_list)
-#
-# min_points = []
-# max_points = []
-#
-# # print(mins_maxs_list)
-#
-# for el in mins_maxs_list:
-#     min_points.append(el[0])
-#     max_points.append(el[1])
-#
-# with open("max_values_ico.obj", "w") as f_min:
-#     for point in max_points:
-#         f_min.write(f'v {point[0]} {point[1]} {point[2]} \n')
-#
-#     for face in sub_ico_faces:
-#         f_min.write(f'f {face[0]} {face[1]} {face[2]} \n')
-#
-#
-#
-#
-# # ref_len = len(u.keys())
-# # print(ref_len)
-#
-# # print(avg_vect_by_ref(u))
-#
-# #
-# # av = compute_avg_vector(u[0])
-# # print(av)
-# # #
-# # au = np.array(u[0])
-# # # print(au)
-# # print(np.average(au, axis=0))
-# # print(np.median(au, axis=0))
+# v = 642
+# n10 = generate_noise(42, 10)
+# n = [el*10 for el in n10]
+# print(n10)
+# print(n)
+
 
 
 

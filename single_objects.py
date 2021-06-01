@@ -273,10 +273,10 @@ def index_on_edge(slice_ind, row_ind, el_ind, no_slices, no_rows, no_elements):
 
 # ==================
 directory = os.getcwd()
-path = directory + R"\Obtained_raw_data\lyso"
+path = directory + R"\Obtained_raw_data\fv"
 files = os.listdir(path)
-path_on_edge = directory + R"\Lyso_single\On_edge"
-path_in_center = directory + R"\Lyso_single\In_center"
+path_on_edge = directory + R"\Fv_single\On_edge"
+path_in_center = directory + R"\Fv_single\In_center"
 
 for file in files:
     filename = os.path.join(path, file)

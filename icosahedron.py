@@ -224,10 +224,10 @@ def reference_points(img_shape, image_cog, no_subdiv):
 
 vertices = icosahedron_vertices()
 faces = icosahedron_faces()
-subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, 4)
+subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, 3)
 subdivided_verts = scale_vertices(subdivided_verts)
 
-with open("subdivided_ico_4.obj", "w") as f:
+with open("subdivided_ico_3.obj", "w") as f:
     for vert in subdivided_verts:
         v1 = vert[0]
         v2 = vert[1]
