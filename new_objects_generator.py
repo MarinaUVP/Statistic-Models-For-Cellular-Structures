@@ -5,6 +5,7 @@ import math
 from perlin_noise import PerlinNoise
 import icosahedron
 from random import *
+import trimesh
 
 
 # def generate_noise(no_ref_points, no_octaves=10):
@@ -52,23 +53,6 @@ def unite_by_ref_index(intersections):
             ref_dict[ind].append(object[ind])
 
     return ref_dict
-
-
-# def avg_vect_by_ref(ref_dict):
-#     """
-#     Computes average vector for each ref. direction.
-#     Returns a list of average vectors.
-#     """
-#
-#     avg_ref_vectors = []
-#     no_ref_points = len(ref_dict.keys())
-#
-#     for i in range(no_ref_points):
-#         points = ref_dict[i]
-#         avg = np.average(points, axis=0)
-#         avg_ref_vectors.append(avg)
-#
-#     return avg_ref_vectors
 
 
 def dict_avg_vect_by_ref(ref_dict):
@@ -325,8 +309,6 @@ def lyso_generator(data_file, param=0, sigma=0.2):
     np.random.seed(param)
     values = np.random.normal(0.5, sigma, no_vertices)
     n_values = normalize_values(values)
-    print("n values")
-    print(n_values)
 
     # Generate vertices of new object
     new_vertices = []
@@ -335,7 +317,10 @@ def lyso_generator(data_file, param=0, sigma=0.2):
         new_point = (avg_vectors[key] - st_devs[key]) + n_values[key] * whole_vector
         new_vertices.append(new_point)
 
+    sub_ico_faces = np.array(sub_ico_faces)
+
     return new_vertices, sub_ico_faces
+
 
 def write_obj_file(filepath, vertices, faces):
     """
@@ -350,25 +335,38 @@ def write_obj_file(filepath, vertices, faces):
             f.write(f'f {face[0]} {face[1]} {face[2]} \n')
 
 
-# ===== Icosahedron ========
-# ico_vertices = icosahedron.icosahedron_vertices()
-# ico_faces = icosahedron.icosahedron_faces()
-# sub_ico_vertices, sub_ico_faces = icosahedron.subdivided_icosahedron(ico_vertices, ico_faces, 3)
+def smooth_mesh(vertices_new_object, faces_new_object, no_iterations=1):
+    """
+    Smoothing a mesh, using  laplacian smoothing and Humphrey filtering.
+    Sources:
+    - https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_humphrey
+    - http://www.joerg-vollmer.de/downloads/Improved_Laplacian_Smoothing_of_Noisy_Surface_Meshes.pdf
+    """
 
-# print(sub_ico_faces)
+    n_faces = faces_new_object - 1
+    tri_mesh = trimesh.Trimesh(vertices=vertices_new_object, faces=n_faces)
+    smooth = trimesh.smoothing.filter_humphrey(tri_mesh, iterations=no_iterations)
+    smooth_vertices = smooth.vertices
+    smooth_faces = smooth.faces + 1
 
-# ===========
+    return smooth_vertices, smooth_faces
+
+
+# ============================
 
 directory = os.getcwd()
 path_data_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_iso_lyso_3.txt"
 path_new_objects = directory + R"\Lyso_single\New_objects\sub_3"
-filename = "new_lyso_example_987_0.03.obj"
-
+filename = "new_lyso_example_no_smooth_60_0.2_noit10.obj"
 path_new_obj = os.path.join(path_new_objects, filename)
 
-vertices, faces = lyso_generator(path_data_file, 987, 0.03)
-# vertices, faces = lyso_generator_old(path_data_file, 987, 0.01)
-write_obj_file(path_new_obj, vertices, faces)
+# vertices, faces = lyso_generator(path_data_file, 60, 0.1)
+vertices, faces = lyso_generator(path_data_file, 60)
+s_vertices, s_faces = smooth_mesh(vertices, faces, 10)
+
+# Write data file !!! (do not delete this)
+write_obj_file(path_new_obj, s_vertices, s_faces)
+
 
 
 # === Experiments
