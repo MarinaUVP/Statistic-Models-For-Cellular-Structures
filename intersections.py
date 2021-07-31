@@ -523,6 +523,28 @@ def ray_voxel_intersection(center, point, traversal_res):
     return int_point
 
 
+# def ray_voxel_intersection_reverse(center, point, traversal_res):
+#     """
+#     Compute where ray from a reference point towards center intersects voxel object.
+#     traversal_res are arrays between which intersection happens.
+#     """
+#
+#     voxel_in = traversal_res[0]
+#     voxel_out = traversal_res[1]
+#
+#     # direction_vector = np.array(point) - np.array(center)
+#     direction_vector = np.array(center) - np.array(point)
+#
+#     ind, grid_value = grid_index(voxel_in, voxel_out)
+#
+#     # t = find_t(center[ind], direction_vector[ind], grid_value)
+#     t = find_t(point[ind], direction_vector[ind], grid_value)
+#     # int_point = point_by_t(center, direction_vector, t)
+#     int_point = point_by_t(point, direction_vector, t)
+#
+#     return int_point
+#
+
 def image_data(filename):
     """
     Reads information about voxel image and returns image data and another paramaters.
@@ -543,7 +565,7 @@ def image_data(filename):
     return cog, img_data
 
 
-def all_intersections_object(file, ico_subdiv_factor):
+def all_intersections_object(file, ico_subdiv_factor, rot_matrix=[]):
     """
     Computes all intersections where rays from points around an object toward object's center hit an object.
     """
@@ -556,7 +578,7 @@ def all_intersections_object(file, ico_subdiv_factor):
     # scaled_points = dodecahedron.scale(raw_points, factor)
     # translated_points = dodecahedron.translate(scaled_points, cog)
 
-    ref_points = icosahedron.reference_points(img_shape, cog, ico_subdiv_factor)
+    ref_points = icosahedron.reference_points(img_shape, cog, ico_subdiv_factor, rot_matrix)
 
     inter_points = []
     for point in ref_points:

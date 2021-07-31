@@ -109,8 +109,8 @@ def get_framed_voxel_object(path_to_file):
 # ============
 
 directory = os.getcwd()
-path_to_files = directory + R"\Lyso_single\In_center"
-path_to_save = directory + R"\Lyso_single\In_center\Framed"
+path_to_files = directory + R"\Fv_single\In_center"
+path_to_save = directory + R"\Fv_single\In_center\Framed"
 
 files = os.listdir(path_to_files)
 for path, dirs, files in os.walk(path_to_files):
@@ -121,4 +121,4 @@ for path, dirs, files in os.walk(path_to_files):
 
         # save new framed image
         nib.save(framed_img, filename_path)
-        print("saved")
+        print(file)

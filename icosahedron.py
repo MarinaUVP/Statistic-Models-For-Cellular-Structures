@@ -1,6 +1,7 @@
 # https://sinestesia.co/blog/tutorials/python-icospheres/
 
 import math
+import numpy as np
 
 def icosahedron_vertices():
     """
@@ -202,7 +203,18 @@ def translate_vertices(vertices, cog):
     return translated_coords
 
 
-def reference_points(img_shape, image_cog, no_subdiv):
+def rotate_vertices(vertices, rot_matrix):
+
+    rotated_coords = []
+    for el in vertices:
+        vertex = np.array(el)
+        rotated_vertex = np.dot(rot_matrix, vertex)
+        rotated_coords.append(rotated_vertex)
+
+    return rotated_coords
+
+
+def reference_points(img_shape, image_cog, no_subdiv, rot_matrix=[]):
     """
     Returns reference points for an object based on the object's (image) shape / size.
     """
@@ -214,7 +226,13 @@ def reference_points(img_shape, image_cog, no_subdiv):
     s_factor = scaling_factor(img_shape)
 
     scaled_vertices = scale_vertices(subdivided_verts, s_factor)
-    translated_vertices = translate_vertices(scaled_vertices, image_cog)
+
+    if len(rot_matrix) == 1:
+        translated_vertices = translate_vertices(scaled_vertices, image_cog)
+
+    else:
+        rotated_vertices = rotate_vertices(scaled_vertices, rot_matrix)
+        translated_vertices = translate_vertices(rotated_vertices, image_cog)
 
     # return translated_vertices, subdivided_faces
     return translated_vertices
@@ -224,10 +242,12 @@ def reference_points(img_shape, image_cog, no_subdiv):
 
 vertices = icosahedron_vertices()
 faces = icosahedron_faces()
-subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, 3)
-subdivided_verts = scale_vertices(subdivided_verts)
+# subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, 3)
+# subdivided_verts = scale_vertices(subdivided_verts)
+subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, 1)
+# subdivided_verts = rotate_vertices(subdivided_verts, 30)
 
-with open("subdivided_ico_3.obj", "w") as f:
+with open("subdivided_ico_1.obj", "w") as f:
     for vert in subdivided_verts:
         v1 = vert[0]
         v2 = vert[1]

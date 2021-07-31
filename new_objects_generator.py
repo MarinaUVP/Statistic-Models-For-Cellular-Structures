@@ -352,22 +352,37 @@ def smooth_mesh(vertices_new_object, faces_new_object, no_iterations=1):
     return smooth_vertices, smooth_faces
 
 
-# ============================
+# ===== GENERATE NEW OBJECTS ============================
+
+# ===== Endolysososmes ==================================
 
 directory = os.getcwd()
 path_data_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_iso_lyso_3.txt"
-path_new_objects = directory + R"\Lyso_single\New_objects\sub_3"
-filename = "new_lyso_example_no_smooth_60_0.2_noit10.obj"
+path_new_objects = directory + R"\Lyso_single\New_objects"
+filename = "new_lyso_par60_sigma0.5_smoot10.obj"
 path_new_obj = os.path.join(path_new_objects, filename)
 
 # vertices, faces = lyso_generator(path_data_file, 60, 0.1)
-vertices, faces = lyso_generator(path_data_file, 60)
+vertices, faces = lyso_generator(path_data_file, 60, 0.5)
 s_vertices, s_faces = smooth_mesh(vertices, faces, 10)
 
 # Write data file !!! (do not delete this)
 write_obj_file(path_new_obj, s_vertices, s_faces)
 
 
+# ===== Fusiform Vesicles =============================
+
+# directory = os.getcwd()
+# path_data_file = directory + R"\Fv_single\Intersections\all_intersections.txt"
+# path_new_objects = directory + R"\Fv_single\New_objects"
+# filename = "new_fv_par123_sigma05_smoot10.obj"
+# path_new_obj = os.path.join(path_new_objects, filename)
+# # vertices, faces = lyso_generator(path_data_file, 60, 0.1)
+# vertices, faces = lyso_generator(path_data_file, 123, 0.5)
+# s_vertices, s_faces = smooth_mesh(vertices, faces, 10)
+#
+# # Write data file !!! (do not delete this)
+# write_obj_file(path_new_obj, s_vertices, s_faces)
 
 # === Experiments
 
