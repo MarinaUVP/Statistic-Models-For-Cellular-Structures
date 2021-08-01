@@ -7,6 +7,7 @@ import nibabel as nib
 import dodecahedron
 import icosahedron
 from scipy import ndimage
+import hexagon_object
 
 
 def perpendicular_point(point, center, x_min, x_max, y_min, y_max, z_min, z_max):
@@ -579,6 +580,41 @@ def all_intersections_object(file, ico_subdiv_factor, rot_matrix=[]):
     # translated_points = dodecahedron.translate(scaled_points, cog)
 
     ref_points = icosahedron.reference_points(img_shape, cog, ico_subdiv_factor, rot_matrix)
+
+    inter_points = []
+    for point in ref_points:
+
+        stepX, stepY, stepZ = compute_steps(cog, point)
+        steps = [stepX, stepY, stepZ]
+
+        edge_coords = define_edge_coords(img_shape, steps)
+
+        first_grids = first_grids_inter(cog, steps)
+
+        tMaxX, tMaxY, tMaxZ = compute_tMaxs(cog, point, first_grids)
+
+        tDeltaX, tDeltaY, tDeltaZ = compute_tDeltas(cog, point, steps)
+
+        res = voxel_traversal(img_data, cog, edge_coords, stepX, stepY, stepZ, tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY,
+                              tDeltaZ)
+
+        if res != None:
+            int_point = ray_voxel_intersection(cog, point, res)
+            inter_points.append(int_point)
+
+    return (inter_points, cog)
+
+
+def all_intersections_hex_object(file, subdiv_factor, rot_matrix=[], z_coord=1/10):
+    """
+    Computes all intersections where rays from points around an object toward object's center hit an object.
+    """
+
+    img = nib.load(file)
+    img_shape = img.shape
+    cog, img_data = image_data(file)
+
+    ref_points = hexagon_object.reference_points(z_coord, img_shape, cog, subdiv_factor, rot_matrix)
 
     inter_points = []
     for point in ref_points:

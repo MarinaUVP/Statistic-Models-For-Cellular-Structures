@@ -6,6 +6,7 @@ from perlin_noise import PerlinNoise
 import icosahedron
 from random import *
 import trimesh
+import hexagon_object
 
 
 # def generate_noise(no_ref_points, no_octaves=10):
@@ -322,6 +323,44 @@ def lyso_generator(data_file, param=0, sigma=0.2):
     return new_vertices, sub_ico_faces
 
 
+def hex_generator(data_file, param=0, sigma=0.2):
+    """
+    Generates new lysosome.
+    :param data_file:
+    :param param: Whole number.
+    :param sigma: Standard deviation of the probability density function of the normal distribution.
+    :return: Data for mesh object. List of vertices and list of faces.
+    """
+
+    # Icosahedron -----
+    hex_vertices = hexagon_object.hex_obj_vertices()
+    hex_faces = hexagon_object.hex_obj_faces()
+    sub_hex_vertices, sub_hex_faces = icosahedron.subdivided_icosahedron(hex_vertices, hex_faces, 3)
+
+    # Obtained data -----
+    all_intersection = read_intersections_file(data_file)
+    u_dict = unite_by_ref_index(all_intersection)
+    avg_vectors = dict_avg_vect_by_ref(u_dict)
+    st_devs = standard_deviation_all_ref_points(u_dict)
+    no_vertices = len(list(avg_vectors.keys()))
+
+    # Generate values between 0 and 1 based on the param.
+    np.random.seed(param)
+    values = np.random.normal(0.5, sigma, no_vertices)
+    n_values = normalize_values(values)
+
+    # Generate vertices of new object
+    new_vertices = []
+    for key in list(avg_vectors.keys()):
+        whole_vector = 2 * np.array(st_devs[key])
+        new_point = (avg_vectors[key] - st_devs[key]) + n_values[key] * whole_vector
+        new_vertices.append(new_point)
+
+    sub_hex_faces = np.array(sub_hex_faces)
+
+    return new_vertices, sub_hex_faces
+
+
 def write_obj_file(filepath, vertices, faces):
     """
     Writes .obj file from data obtained with generate_lyso function.
@@ -356,33 +395,33 @@ def smooth_mesh(vertices_new_object, faces_new_object, no_iterations=1):
 
 # ===== Endolysososmes ==================================
 
-directory = os.getcwd()
-path_data_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_iso_lyso_3.txt"
-path_new_objects = directory + R"\Lyso_single\New_objects"
-filename = "new_lyso_par60_sigma0.5_smoot10.obj"
-path_new_obj = os.path.join(path_new_objects, filename)
-
-# vertices, faces = lyso_generator(path_data_file, 60, 0.1)
-vertices, faces = lyso_generator(path_data_file, 60, 0.5)
-s_vertices, s_faces = smooth_mesh(vertices, faces, 10)
-
-# Write data file !!! (do not delete this)
-write_obj_file(path_new_obj, s_vertices, s_faces)
-
-
-# ===== Fusiform Vesicles =============================
-
 # directory = os.getcwd()
-# path_data_file = directory + R"\Fv_single\Intersections\all_intersections.txt"
-# path_new_objects = directory + R"\Fv_single\New_objects"
-# filename = "new_fv_par123_sigma05_smoot10.obj"
+# path_data_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_iso_lyso_3.txt"
+# path_new_objects = directory + R"\Lyso_single\New_objects"
+# filename = "new_lyso_par60_sigma0.5_smoot10.obj"
 # path_new_obj = os.path.join(path_new_objects, filename)
+#
 # # vertices, faces = lyso_generator(path_data_file, 60, 0.1)
-# vertices, faces = lyso_generator(path_data_file, 123, 0.5)
+# vertices, faces = lyso_generator(path_data_file, 60, 0.5)
 # s_vertices, s_faces = smooth_mesh(vertices, faces, 10)
 #
 # # Write data file !!! (do not delete this)
 # write_obj_file(path_new_obj, s_vertices, s_faces)
+
+
+# ===== Fusiform Vesicles =============================
+
+directory = os.getcwd()
+path_data_file = directory + R"\Fv_single\Intersections\all_intersections_hex.txt"
+path_new_objects = directory + R"\Fv_single\New_objects"
+filename = "new_fv_hex_par60_sigma02_smoot1.obj"
+path_new_obj = os.path.join(path_new_objects, filename)
+# vertices, faces = lyso_generator(path_data_file, 60, 0.1)
+vertices, faces = hex_generator(path_data_file, 60, 0.2)
+s_vertices, s_faces = smooth_mesh(vertices, faces, 1)
+
+# Write data file !!! (do not delete this)
+write_obj_file(path_new_obj, s_vertices, s_faces)
 
 # === Experiments
 
