@@ -108,17 +108,17 @@ def get_framed_voxel_object(path_to_file):
 # Frame all single object which are not on the edge of an original image.
 # ============
 
-directory = os.getcwd()
-path_to_files = directory + R"\Fv_single\In_center"
-path_to_save = directory + R"\Fv_single\In_center\Framed"
-
-files = os.listdir(path_to_files)
-for path, dirs, files in os.walk(path_to_files):
-    for file in files:
-        filename_path = os.path.join(path_to_save, file)
-        abs_file_path = os.path.join(path, file)
-        framed_img = get_framed_voxel_object(abs_file_path)
-
-        # save new framed image
-        nib.save(framed_img, filename_path)
-        print(file)
+# directory = os.getcwd()
+# path_to_files = directory + R"\Fv_single\In_center"
+# path_to_save = directory + R"\Fv_single\In_center\Framed"
+#
+# files = os.listdir(path_to_files)
+# for path, dirs, files in os.walk(path_to_files):
+#     for file in files:
+#         filename_path = os.path.join(path_to_save, file)
+#         abs_file_path = os.path.join(path, file)
+#         framed_img = get_framed_voxel_object(abs_file_path)
+#
+#         # save new framed image
+#         nib.save(framed_img, filename_path)
+#         print(file)

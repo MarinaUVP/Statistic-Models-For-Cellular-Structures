@@ -66,6 +66,43 @@ def icosahedron_faces():
     return faces
 
 
+def pentagon_center(p1, p2, p3):
+    """
+    Computes center of pentagon based on three of pentagon's vertices.
+    :param p1: First neighbour vertex.
+    :param p2: Second neighbour vertex.
+    :param p3: Vertex opposite to the middle of the two neighbor vertices.
+    :return: Center point of a pentagon.
+    """
+
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    p3 = np.array(p3)
+
+    middle = (p1 + p2) / 2  # middle point between two neighbour vertices
+    l = np.linalg.norm(middle-p2)  # half the distance between two neighbor vertices
+    h = l / (math.tan(math.radians(36)))  # distance from middle point to the center of pentagon
+    r = np.linalg.norm(p3-middle)  # distance between middle point and pentagon's vertex opposite to it
+    r_vec = p3 - middle  # vector from middle point to p3
+    factor = h/r
+    c = middle + factor*r_vec
+    center = [c[0], c[1], c[2]]
+
+    return center
+
+
+def ico_cylinder_vertices():
+    """
+    Returns coordinates of icosahedron with object center in center of Cartesian coordinate system.
+    """
+
+    vertices = icosahedron_vertices()
+    vertices[1] = pentagon_center(vertices[0], vertices[5], vertices[8])
+    vertices[2] = pentagon_center(vertices[10], vertices[11], vertices[3])
+
+    return vertices
+
+
 def pair_format(pair):
     pair_str = '{0}-{1}'.format(pair[0], pair[1])
 
@@ -173,6 +210,25 @@ def scaling_factor(img_shape):
     return s_factor
 
 
+def scaling_factor_cog(img_shape, cog):
+    """
+    Computes scaling factor based on the COG.
+    """
+
+    x = img_shape[0]
+    y = img_shape[1]
+    z = img_shape[2]
+
+    max_x = max(cog[0], abs(x - cog[0]))
+    max_y = max(cog[1], abs(y - cog[1]))
+    max_z = max(cog[2], abs(z - cog[2]))
+
+    length = (math.sqrt(max_x**2 + max_y**2 + max_z**2))
+    s_factor = math.ceil(length)
+
+    return s_factor
+
+
 def scale_vertices(vertices, s_factor=1):
     """
     Scale all vertices for the s_factor.
@@ -209,6 +265,9 @@ def rotate_vertices(vertices, rot_matrix):
     for el in vertices:
         vertex = np.array(el)
         rotated_vertex = np.dot(rot_matrix, vertex)
+        #
+        rotated_vertex = [rotated_vertex[i] for i in range(3)]
+        #
         rotated_coords.append(rotated_vertex)
 
     return rotated_coords
@@ -223,39 +282,36 @@ def reference_points(img_shape, image_cog, no_subdiv, rot_matrix=[]):
     faces = icosahedron_faces()
 
     subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, no_subdiv)
-    s_factor = scaling_factor(img_shape)
+    s_factor = scaling_factor_cog(img_shape, image_cog)
 
     scaled_vertices = scale_vertices(subdivided_verts, s_factor)
 
-    if len(rot_matrix) == 1:
+    if len(rot_matrix) == 0:
         translated_vertices = translate_vertices(scaled_vertices, image_cog)
 
     else:
         rotated_vertices = rotate_vertices(scaled_vertices, rot_matrix)
         translated_vertices = translate_vertices(rotated_vertices, image_cog)
 
-    # return translated_vertices, subdivided_faces
     return translated_vertices
 
 
 # ======
 
-vertices = icosahedron_vertices()
-faces = icosahedron_faces()
-# subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, 3)
+# vertices = icosahedron_vertices()
+# faces = icosahedron_faces()
+# subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, 0)
 # subdivided_verts = scale_vertices(subdivided_verts)
-subdivided_verts, subdivided_faces = subdivided_icosahedron(vertices, faces, 1)
-# subdivided_verts = rotate_vertices(subdivided_verts, 30)
-
-with open("subdivided_ico_1.obj", "w") as f:
-    for vert in subdivided_verts:
-        v1 = vert[0]
-        v2 = vert[1]
-        v3 = vert[2]
-        f.write(f"v {v1} {v2} {v3}\n")
-
-    for face in subdivided_faces:
-        f1 = face[0]
-        f2 = face[1]
-        f3 = face[2]
-        f.write(f"f {f1} {f2} {f3}\n")
+#
+# with open("subdivided_icosphere_0.obj", "w") as f:
+#     for vert in subdivided_verts:
+#         v1 = vert[0]
+#         v2 = vert[1]
+#         v3 = vert[2]
+#         f.write(f"v {v1} {v2} {v3}\n")
+#
+#     for face in subdivided_faces:
+#         f1 = face[0]
+#         f2 = face[1]
+#         f3 = face[2]
+#         f.write(f"f {f1} {f2} {f3}\n")

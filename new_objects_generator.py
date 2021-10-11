@@ -2,24 +2,10 @@ import os
 import ast
 import numpy as np
 import math
-from perlin_noise import PerlinNoise
 import icosahedron
 from random import *
 import trimesh
 import hexagon_object
-
-
-# def generate_noise(no_ref_points, no_octaves=10):
-#     """
-#     Generates Perlin noise based on number of reference points.
-#     Noise represented as an array of values, same length as no. of reference points.
-#     """
-#
-#     noise = PerlinNoise(octaves=no_octaves, seed=no_ref_points)
-#     noise_array = [noise([j/no_ref_points]) for j in range(no_ref_points)]
-#     # edited_array = [el*10 for el in noise_array]
-#
-#     return noise_array
 
 
 def read_intersections_file(path_to_file):
@@ -133,26 +119,10 @@ def standard_deviation_all_ref_points(ref_dict):
         for point in points:
             squared_devs += np.square(avg_vect - np.array(point))
 
-        std_dev[key] = np.sqrt(squared_devs / len(points))
+        std_dev[key] = np.sqrt(squared_devs / (len(points)-1))
 
     return std_dev
 
-
-# def borders_ref_point(avg_vectors, std_dev):
-#     """
-#     Compoutes borders of area where values can be selected. For each reference point.
-#     [avg. vector - std. deviation, avg. vector + std. deviation]
-#     :param avg_vectors:  Dictionary of avg. vectors (based on indexes).
-#     :param std_dev: Dictionary of standard deviation (based on indexes)
-#     :return: Dictionary of borders for each ref. point.
-#     """
-#
-#     borders_dict = dict()
-#
-#     for key in list(avg_vectors.keys()):
-#         borders_dict[key] = [avg_vectors[key] - st_dev[key], avg_vectors[key] - st_dev[key]]
-#
-#     return borders_dict
 
 def min_max_arrays_all_ref_points(ref_dict):
     """
@@ -170,62 +140,6 @@ def min_max_arrays_all_ref_points(ref_dict):
         maxs.append(max)
 
     return mins, maxs
-
-
-# def min_max_directions(avg_vectors, mins_maxs_list):
-#     """
-#     Computes vectors from average vector to min and max vectors for each reference point.
-#     """
-#
-#     no_ref_points = len(avg_vectors)
-#     directions = dict()
-#
-#     for ind in range(no_ref_points):
-#         avg_vector = avg_vectors[ind]
-#         min_vector, max_vector = mins_maxs_list[ind]
-#
-#         min_direction = min_vector - avg_vector
-#         max_direction = max_vector - avg_vector
-#
-#         directions[ind] = [min_direction, max_direction]
-#
-#     return directions
-
-
-# def generate_lyso(data_file, param=0):
-#     """
-#     Generates new lysosome.
-#     :param param: Value between -1 and 1.
-#     :return: Data for mesh object. List of vertices and list of faces.
-#     """
-#
-#     # Icosahedron -----
-#     ico_vertices = icosahedron.icosahedron_vertices()
-#     ico_faces = icosahedron.icosahedron_faces()
-#     sub_ico_vertices, sub_ico_faces = icosahedron.subdivided_icosahedron(ico_vertices, ico_faces, 3)
-#
-#     # Obtained data -----
-#     all_intersection = read_intersections_file(data_file)
-#     u_dict = unite_by_ref_index(all_intersection)
-#     avg_vectors = avg_vect_by_ref(u_dict)
-#     mins_maxs_list = min_max_all_ref_points(u_dict)
-#     min_max_directs = min_max_directions(avg_vectors, mins_maxs_list)
-#
-#     new_vertices = []
-#     if param == 0:
-#         new_vertices = avg_vectors
-#     else:
-#         if param > 0:
-#             for ind in range(len(avg_vectors)):
-#                 point = avg_vectors[ind] + param * min_max_directs[ind][1]
-#                 new_vertices.append(point)
-#         elif param < 0:
-#             for ind in range(len(avg_vectors)):
-#                 point = avg_vectors[ind] + abs(param) * min_max_directs[ind][0]
-#                 new_vertices.append(point)
-#
-#     return new_vertices, sub_ico_faces
-#
 
 
 def lyso_generator_old(data_file, param=0, delta = 0.5):
@@ -285,7 +199,7 @@ def normalize_values(values):
     return new_valeus
 
 
-def lyso_generator(data_file, param=0, sigma=0.2):
+def lyso_generator(data_file, param=0, sigma=0.2, smooth_iter=1):
     """
     Generates new lysosome.
     :param data_file:
@@ -320,10 +234,13 @@ def lyso_generator(data_file, param=0, sigma=0.2):
 
     sub_ico_faces = np.array(sub_ico_faces)
 
-    return new_vertices, sub_ico_faces
+    # Smoothing
+    smooth_vertices, smooth_faces = smooth_mesh(new_vertices, sub_ico_faces, smooth_iter)
+
+    return smooth_vertices, smooth_faces
 
 
-def hex_generator(data_file, param=0, sigma=0.2):
+def hex_generator(data_file, param=0, sigma=0.2, smooth_iter=1):
     """
     Generates new lysosome.
     :param data_file:
@@ -332,7 +249,7 @@ def hex_generator(data_file, param=0, sigma=0.2):
     :return: Data for mesh object. List of vertices and list of faces.
     """
 
-    # Icosahedron -----
+    # Hex object -----
     hex_vertices = hexagon_object.hex_obj_vertices()
     hex_faces = hexagon_object.hex_obj_faces()
     sub_hex_vertices, sub_hex_faces = icosahedron.subdivided_icosahedron(hex_vertices, hex_faces, 3)
@@ -358,7 +275,10 @@ def hex_generator(data_file, param=0, sigma=0.2):
 
     sub_hex_faces = np.array(sub_hex_faces)
 
-    return new_vertices, sub_hex_faces
+    # Smoothing
+    smooth_vertices, smooth_faces = smooth_mesh(new_vertices, sub_hex_faces, smooth_iter)
+
+    return smooth_vertices, smooth_faces
 
 
 def write_obj_file(filepath, vertices, faces):
@@ -396,42 +316,28 @@ def smooth_mesh(vertices_new_object, faces_new_object, no_iterations=1):
 # ===== Endolysososmes ==================================
 
 # directory = os.getcwd()
-# path_data_file = directory + R"\Lyso_single\Intersections\all_intersections_cog_iso_lyso_3.txt"
-# path_new_objects = directory + R"\Lyso_single\New_objects"
-# filename = "new_lyso_par60_sigma0.5_smoot10.obj"
+# path_data_file = directory + R"\Lyso_single\Intersections\all_intersections_lyso.txt"
+# path_new_objects = directory + R"\Lyso_single\New_objects\thesis_examples"
+# filename = "par2864_sigma02_smooth0.obj"
 # path_new_obj = os.path.join(path_new_objects, filename)
-#
-# # vertices, faces = lyso_generator(path_data_file, 60, 0.1)
-# vertices, faces = lyso_generator(path_data_file, 60, 0.5)
-# s_vertices, s_faces = smooth_mesh(vertices, faces, 10)
+# vertices, faces = lyso_generator(path_data_file, 2864, 0.2, 0)
 #
 # # Write data file !!! (do not delete this)
-# write_obj_file(path_new_obj, s_vertices, s_faces)
+# write_obj_file(path_new_obj, vertices, faces)
 
 
 # ===== Fusiform Vesicles =============================
 
-directory = os.getcwd()
-path_data_file = directory + R"\Fv_single\Intersections\all_intersections_hex.txt"
-path_new_objects = directory + R"\Fv_single\New_objects"
-filename = "new_fv_hex_par60_sigma02_smoot1.obj"
-path_new_obj = os.path.join(path_new_objects, filename)
-# vertices, faces = lyso_generator(path_data_file, 60, 0.1)
-vertices, faces = hex_generator(path_data_file, 60, 0.2)
-s_vertices, s_faces = smooth_mesh(vertices, faces, 1)
-
-# Write data file !!! (do not delete this)
-write_obj_file(path_new_obj, s_vertices, s_faces)
-
-# === Experiments
-
-# all_intersection = read_intersections_file(path_data_file)
-# u_dict = unite_by_ref_index(all_intersection)
-# avg_dict = dict_avg_vect_by_ref(u_dict)
-# st_dev = standard_deviation_all_ref_points(u_dict)
+# directory = os.getcwd()
+# path_data_file = directory + R"\Fv_single\Intersections\all_intersections_learning_fv.txt"
+# path_new_objects = directory + R"\Fv_single\New_objects\thesis_examples"
+# filename = "new_fv_par2864_sigma02_smooth0.obj"
+# path_new_obj = os.path.join(path_new_objects, filename)
+# vertices, faces = hex_generator(path_data_file, 2864, 0.2, 0)
 #
-# for key in list(avg_dict.keys()):
-#     print(key, avg_dict[key])
+# # Write data file !!! (do not delete this)
+# write_obj_file(path_new_obj, vertices, faces)
+
 
 
 

@@ -1,9 +1,5 @@
 import math
 import icosahedron
-import intersections
-import os
-import nibabel as nib
-import rotation_matrix
 
 def hex_obj_vertices(z=1/10):
 
@@ -86,7 +82,7 @@ def reference_points(z_coord, img_shape, cog,  no_subdiv, rot_matrix=[]):
 
     vertices = hex_obj_vertices(z_coord)
     faces = hex_obj_faces()
-    s_factor = icosahedron.scaling_factor(img_shape)
+    s_factor = icosahedron.scaling_factor_cog(img_shape, cog)
 
     # Scaling
     scaled_vertices = icosahedron.scale_vertices(vertices, s_factor)
@@ -109,32 +105,10 @@ def reference_points(z_coord, img_shape, cog,  no_subdiv, rot_matrix=[]):
     return translated_vertices
 
 # ===================
-#
+
 # directory = os.getcwd()
-# file = directory + R"\Fv_single\In_center\Framed\Selected\fv_instance_fib1-0-0-0_24.nii"
-#
-# cog, img_data = intersections.image_data(file)
-#
-# img = nib.load(file)
-# img_shape = img.shape
-# s_factor = icosahedron.scaling_factor(img_shape)
-#
-# filename = "hex_object_scaled_rotated_translated.obj"
-# vertices = hex_obj_vertices(1/10)
+# file = directory + R"\basic_hex_object.obj"
+# verts = hex_obj_vertices(1/10)
 # faces = hex_obj_faces()
-# scaled_vertices = icosahedron.scale_vertices(vertices, s_factor)
-#
-# # Correct first vertex and last vertex
-# scaled_vertices[0][2] = scaled_vertices[1][2]
-# scaled_vertices[-1][2] = scaled_vertices[-2][2]
-#
-# sub_vertices, sub_faces = icosahedron.subdivided_icosahedron(scaled_vertices, faces, 3)
-# # scaled_vertices = icosahedron.scale_vertices(sub_vertices, s_factor)
-#
-# rot_vec = rotation_matrix.rotation_vector(file)
-# rot_matrix = rotation_matrix.rotation_matrix(rot_vec)
-# rotated_vertices = icosahedron.rotate_vertices(sub_vertices, rot_matrix)
-#
-# translated_vertices = icosahedron.translate_vertices(rotated_vertices, cog)
-#
-# write_obj_file(filename, translated_vertices, sub_faces)
+# write_obj_file(file, verts, faces)
+

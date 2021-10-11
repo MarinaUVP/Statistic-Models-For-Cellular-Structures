@@ -2,9 +2,7 @@
 import numpy as np
 import math
 from sympy import *
-import os
 import nibabel as nib
-import dodecahedron
 import icosahedron
 from scipy import ndimage
 import hexagon_object
@@ -524,33 +522,10 @@ def ray_voxel_intersection(center, point, traversal_res):
     return int_point
 
 
-# def ray_voxel_intersection_reverse(center, point, traversal_res):
-#     """
-#     Compute where ray from a reference point towards center intersects voxel object.
-#     traversal_res are arrays between which intersection happens.
-#     """
-#
-#     voxel_in = traversal_res[0]
-#     voxel_out = traversal_res[1]
-#
-#     # direction_vector = np.array(point) - np.array(center)
-#     direction_vector = np.array(center) - np.array(point)
-#
-#     ind, grid_value = grid_index(voxel_in, voxel_out)
-#
-#     # t = find_t(center[ind], direction_vector[ind], grid_value)
-#     t = find_t(point[ind], direction_vector[ind], grid_value)
-#     # int_point = point_by_t(center, direction_vector, t)
-#     int_point = point_by_t(point, direction_vector, t)
-#
-#     return int_point
-#
-
 def image_data(filename):
     """
     Reads information about voxel image and returns image data and another paramaters.
     Returns:
-        - factor: scaling factor (dodecahedron should be bigger than voxel object)
         - cog: center of gravity
         - img_data: data info about voxel image
     """
@@ -558,10 +533,7 @@ def image_data(filename):
     img = nib.load(filename)
     img_data = img.get_fdata()
 
-    # img_size = img.header.get_data_shape()
     cog = ndimage.measurements.center_of_mass(img_data)
-
-    # factor = scaling_factor(img_size, cog)
 
     return cog, img_data
 
@@ -574,10 +546,6 @@ def all_intersections_object(file, ico_subdiv_factor, rot_matrix=[]):
     img = nib.load(file)
     img_shape = img.shape
     cog, img_data = image_data(file)
-
-    # raw_points = dodecahedron.dodecahedron_raw()
-    # scaled_points = dodecahedron.scale(raw_points, factor)
-    # translated_points = dodecahedron.translate(scaled_points, cog)
 
     ref_points = icosahedron.reference_points(img_shape, cog, ico_subdiv_factor, rot_matrix)
 

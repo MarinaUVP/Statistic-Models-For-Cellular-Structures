@@ -1,12 +1,7 @@
 import numpy as np
-import os
 import nibabel as nib
 from skimage import measure, filters
-from scipy.spatial import Delaunay, ConvexHull
-import pyvista as pv
-import open3d as o3d
 from sklearn.decomposition import PCA  # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
-import math
 
 # rotation matrix code/answer:
 # https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
@@ -63,21 +58,6 @@ def marching_cubes_obj(file, save_file):
             f.write(f"f {f1} {f2} {f3}\n")
 
 
-# def cube_vertices():
-#     vertices = [
-#         [2,2,1],
-#         [2,-2,1],
-#         [-2,2,1],
-#         [-2,-2,1],
-#         [2,2,-1],
-#         [2,-2,-1],
-#         [-2,2,-1],
-#         [-2,-2,-1]
-#     ]
-#
-#     return vertices
-
-
 def rotation_matrix(rot_vector):
 
     I = np.array([[1, 0, 0],
@@ -105,33 +85,3 @@ def rotation_matrix(rot_vector):
     rot_matrix = np.dot(np.dot(Ft, G), np.linalg.inv(Ft))
 
     return rot_matrix
-
-
-#=============================
-# directory = os.getcwd()
-# file = directory + R"\Fv_single\In_center\Framed\fv_instance_fib1-3-3-0_102.nii"
-# new_file = directory + R"\fv_instance_fib1-3-3-0_102_marching.obj"
-#
-# marching_cubes_obj(file, new_file)
-#
-# r_vector = rotation_vector(file)
-# r_matrix = rotation_matrix(r_vector)
-#
-# print("b")
-# print(r_vector)
-#
-# print("U")
-# print(r_matrix)
-#
-# print("Result")
-# print(np.dot(r_matrix, [0, 0, 1]))
-#
-# cube = cube_vertices()
-# new_vert = []
-# for vertex in cube:
-#     v = np.dot(r_matrix, vertex)
-#     new_vert.append([v[0], v[1], v[2]])
-#
-# with open("cube_rot_fib1-3-3-0_102.obj", "w") as f:
-#     for v in new_vert:
-#         f.write(f"v {v[0]} {v[1]} {v[2]}\n")

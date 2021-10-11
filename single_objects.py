@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import nibabel as nib   # https://nipy.org/nibabel/nibabel_images.html#loading-and-saving
-# import nrrd
 
 
 def find_neighbours_in_slices(image_data):
@@ -328,35 +327,3 @@ for file in files:
         ni_img = nib.Nifti1Image(matrix, img.affine)
         nib.save(ni_img, path_to_save)
         count += 1
-
-# experiment below =====================
-
-# path = directory + R"\Obtained_raw_data\lyso\fib1-3-2-1.nii.gz"
-# # files = os.listdir(path)
-# path_on_edge = directory + R"\On_edge_example"
-# path_in_center = directory + R"\In_center_example"
-#
-# filename = path
-#
-# # Image data
-# img = nib.load(filename)
-# img_data = img.get_fdata()
-# header = img.header
-# data_shape = header.get_data_shape()
-# no_slices = data_shape[0]
-# no_rows = data_shape[1]
-# no_elements = data_shape[2]
-#
-# neighbours_in_slices = find_neighbours_in_slices(img_data)
-# final_groups = join_groups_from_slices(neighbours_in_slices)
-#
-#
-# example_file = "example_final_try.txt"
-# with open(example_file, "w") as f:
-#     for group in final_groups:
-#         f.write("========== \n")
-#         for key, value in group.items():
-#             f.write(f"{key}\n")
-#             f.write(f"{value}\n")
-#             f.write("\n")
-
